@@ -2,7 +2,9 @@
 
 Offline [help.splunk.com](https://help.splunk.com) browser Splunk app for air-gapped and restricted-network Splunk Enterprise deployments.
 
-![Splunk Offline Docs](docs/images/hero-banner.png)
+<p align="center">
+  <img src="docs/images/hero-banner.png" alt="Splunk Offline Docs" width="720" />
+</p>
 
 **Author:** [Joe Hagan](mailto:joehaga@cisco.com)
 

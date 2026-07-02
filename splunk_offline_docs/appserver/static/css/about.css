@@ -29,10 +29,12 @@ body {
 }
 
 .hero img {
-  width: 140px;
-  height: auto;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  flex: 0 0 72px;
 }
 
 .hero h1 {
@@ -143,6 +145,10 @@ th {
 }
 
 .logo-row img {
-  max-height: 48px;
-  width: auto;
+  display: block;
+  width: 320px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 1;
+  object-fit: contain;
 }

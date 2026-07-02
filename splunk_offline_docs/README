@@ -4,7 +4,7 @@ Splunk Offline Docs
 Offline browser for Splunk product documentation mirrored from help.splunk.com.
 Designed for air-gapped and restricted-network Splunk Enterprise deployments.
 
-Version: 0.4.6 (build 20260703w)
+Version: 0.4.7 (build 20260703x)
 Author: Joe Hagan (joehaga@cisco.com)
 
 Overview
