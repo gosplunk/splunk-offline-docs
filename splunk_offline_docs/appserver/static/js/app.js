@@ -309,14 +309,13 @@ function topicInCurrentContext(entry) {
 async function loadManifest() {
   LoadingUI.showOverlay('Loading documentation…', 4);
   const cacheBust = window.__OFFLINE_DOCS_BUILD__ || Date.now();
-  const manifestSteps = [
-  { url: `${DOCS_BASE}/nav.json`, label: 'Loading navigation…', weight: 8 },
-  { url: `${DOCS_BASE}/search-index.json`, label: 'Loading search index…', weight: 62 },
-  { url: `${DOCS_BASE}/link-index.json`, label: 'Loading link map…', weight: 18 },
-  ];
-  let progress = 4;
+  const searchEl = document.getElementById('search');
 
-  const results = await Promise.all(manifestSteps.map(async (step) => {
+  const navStep = { url: `${DOCS_BASE}/nav.json`, label: 'Loading navigation…', weight: 18 };
+  const linkStep = { url: `${DOCS_BASE}/link-index.json`, label: 'Loading link map…', weight: 18 };
+
+  let progress = 4;
+  const loadStep = async (step) => {
     LoadingUI.setOverlayProgress(progress, step.label);
     const res = await fetch(`${step.url}?v=${cacheBust}`);
     if (!res.ok) throw new Error(`Failed to load ${step.url} (${res.status})`);
@@ -324,12 +323,15 @@ async function loadManifest() {
     progress += step.weight;
     LoadingUI.setOverlayProgress(progress, step.label);
     return data;
-  }));
+  };
 
-  const [nav, search, linkIndex] = results;
-  LoadingUI.setOverlayProgress(94, 'Preparing interface…');
+  const [nav, linkIndex] = await Promise.all([
+    loadStep(navStep),
+    loadStep(linkStep),
+  ]);
+
+  LoadingUI.setOverlayProgress(42, 'Preparing interface…');
   navData = sortNavProducts(nav);
-  searchIndex = search;
   buildPathIndex();
   OfflineLinkResolver.setIndex(linkIndex);
   expandedBranches.clear();
@@ -343,6 +345,29 @@ async function loadManifest() {
     location.hash = '';
   }
   LoadingUI.hideOverlay();
+
+  if (searchEl) {
+    searchEl.placeholder = 'Loading search index…';
+    searchEl.disabled = true;
+  }
+
+  try {
+    LoadingUI.setOverlayProgress(55, 'Loading search index…');
+    const res = await fetch(`${DOCS_BASE}/search-index.json?v=${cacheBust}`);
+    if (!res.ok) throw new Error(`Failed to load search-index.json (${res.status})`);
+    searchIndex = await res.json();
+    buildPathIndex();
+    if (searchEl) {
+      searchEl.disabled = false;
+      searchEl.placeholder = 'Search documentation…';
+    }
+  } catch (err) {
+    console.error(err);
+    if (searchEl) {
+      searchEl.disabled = true;
+      searchEl.placeholder = 'Search unavailable (index failed to load)';
+    }
+  }
 }
 
 function renderProductTabs() {
@@ -759,8 +784,11 @@ function initGlobalLinkGuard() {
 
     const searchId = a.dataset.searchId || a.dataset.id;
     if (searchId) {
-      const box = document.querySelector('.search-results');
-      if (box) box.style.display = 'none';
+      const box = document.getElementById('search-results');
+      if (box) {
+        box.hidden = true;
+        box.innerHTML = '';
+      }
       const searchEl = document.getElementById('search');
       if (searchEl) searchEl.value = '';
       const meta = searchIndex.find((t) => t.id === searchId);
@@ -813,16 +841,22 @@ function parseHash() {
 
 let searchTimer = null;
 
+function searchResultsBox() {
+  return document.getElementById('search-results');
+}
+
 function runSearch(query) {
   const q = query.trim().toLowerCase();
-  let box = document.querySelector('.search-results');
-  if (!box) {
-    box = document.createElement('div');
-    box.className = 'search-results';
-    document.body.appendChild(box);
+  const box = searchResultsBox();
+  if (!box) return;
+  if (!searchIndex.length) {
+    box.innerHTML = '<div class="search-empty">Search index is still loading…</div>';
+    box.hidden = false;
+    return;
   }
   if (!q) {
-    box.style.display = 'none';
+    box.hidden = true;
+    box.innerHTML = '';
     return;
   }
 
@@ -846,7 +880,7 @@ function runSearch(query) {
 
   if (!hits.length) {
     box.innerHTML = '<div class="search-empty">No topics found</div>';
-    box.style.display = 'block';
+    box.hidden = false;
     return;
   }
 
@@ -854,7 +888,7 @@ function runSearch(query) {
     const snippet = (h.text || '').slice(0, 100);
     return `<a href="#" data-search-id="${h.id}"><strong>${h.title}</strong>${snippet ? `<span>${snippet}…</span>` : ''}</a>`;
   }).join('');
-  box.style.display = 'block';
+  box.hidden = false;
 }
 
 document.getElementById('search').addEventListener('input', (e) => {
@@ -864,18 +898,23 @@ document.getElementById('search').addEventListener('input', (e) => {
 
 document.getElementById('search').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
-    const first = document.querySelector('.search-results a');
+    const first = document.querySelector('#search-results a');
     if (first) first.click();
   }
   if (e.key === 'Escape') {
-    document.querySelector('.search-results').style.display = 'none';
+    const box = searchResultsBox();
+    if (box) {
+      box.hidden = true;
+      box.innerHTML = '';
+    }
   }
 });
 
 document.addEventListener('click', (e) => {
-  const box = document.querySelector('.search-results');
-  if (box && !box.contains(e.target) && e.target.id !== 'search') {
-    box.style.display = 'none';
+  const box = searchResultsBox();
+  const searchEl = document.getElementById('search');
+  if (box && !box.hidden && !box.contains(e.target) && e.target !== searchEl) {
+    box.hidden = true;
   }
 });
 

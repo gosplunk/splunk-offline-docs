@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Splunk Offline Docs</title>
-  <script>window.__OFFLINE_DOCS_BUILD__ = '20260703f';</script>
+  <script>window.__OFFLINE_DOCS_BUILD__ = '20260703y';</script>
   <script>
     /* Neutralize dangerous hrefs before app.js loads (do not handle clicks here). */
     (function () {
@@ -104,9 +104,14 @@
     <div class="app-loading-bar-fill" id="app-loading-bar-fill"></div>
   </div>
   <header class="topbar">
-    <nav class="product-tabs" id="product-tabs" aria-label="Products"></nav>
-    <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">Dark mode</button>
-    <input type="search" id="search" placeholder="Search documentation..." aria-label="Search" />
+    <div class="topbar-main">
+      <nav class="product-tabs" id="product-tabs" aria-label="Products"></nav>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">Dark mode</button>
+    </div>
+    <div class="search-wrap">
+      <input type="search" id="search" placeholder="Loading search index…" aria-label="Search documentation" disabled />
+      <div class="search-results" id="search-results" hidden></div>
+    </div>
   </header>
   <div class="layout">
     <aside class="sidebar" id="sidebar">

@@ -54,12 +54,19 @@ html {
 /* Top product bar */
 .topbar {
   display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 0 1.25rem;
-  min-height: 48px;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.55rem 1.25rem 0.75rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+.topbar-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 40px;
+  min-width: 0;
 }
 
 .product-tabs {
@@ -96,17 +103,26 @@ html {
   font-weight: 600;
 }
 
+.search-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+}
+
 #search {
-  margin-left: auto;
-  min-width: 200px;
-  max-width: 320px;
-  flex: 0 1 320px;
-  padding: 0.45rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.85rem;
   border-radius: 6px;
   border: 1px solid var(--border-strong);
   background: var(--bg);
   color: var(--text);
   font-size: 0.92rem;
+}
+
+#search:disabled {
+  opacity: 0.75;
+  cursor: wait;
 }
 
 .theme-toggle {
@@ -136,7 +152,7 @@ html {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--mini-width);
   min-height: 100%;
-  height: calc(100% - 49px);
+  height: calc(100% - 96px);
 }
 
 .sidebar {
@@ -445,17 +461,16 @@ a.offline-external {
 
 .search-results {
   position: absolute;
-  right: 1.25rem;
-  top: 3.25rem;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.35rem);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 8px 24px var(--shadow);
-  max-height: 360px;
+  max-height: min(360px, 50vh);
   overflow: auto;
-  width: 380px;
-  z-index: 100;
-  display: none;
+  z-index: 200;
 }
 
 .search-results a {
