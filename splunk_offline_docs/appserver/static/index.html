@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Splunk Offline Docs</title>
+  <script>window.__OFFLINE_DOCS_BUILD__ = '20260703f';</script>
+  <script>
+    /* Neutralize dangerous hrefs before app.js loads (do not handle clicks here). */
+    (function () {
+      function isLocalAnchor(href) {
+        return href && href.charAt(0) === '#' && href.length > 1;
+      }
+
+      function mustNeutralize(href) {
+        if (!href || href === '#') return false;
+        if (isLocalAnchor(href)) return false;
+        if (/^https?:\/\//i.test(href)) return true;
+        if (href.indexOf('/en/') >= 0 || href.indexOf('help.splunk.com') >= 0) return true;
+        if (href.charAt(0) === '/') return true;
+        return false;
+      }
+
+      function stashHref(a) {
+        var h = a.getAttribute('href');
+        if (!h || h === '#') return;
+        if (!mustNeutralize(h)) return;
+        if (!a.getAttribute('data-offline-href')) {
+          a.setAttribute('data-offline-href', h);
+        }
+        a.setAttribute('href', '#');
+        a.removeAttribute('target');
+        a.removeAttribute('rel');
+      }
+
+      function scanRoot(root) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll('a[href]').forEach(stashHref);
+      }
+
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href]');
+        if (!a) return;
+        var orig = a.getAttribute('data-offline-href') || a.getAttribute('href') || '';
+        if (!mustNeutralize(orig)) return;
+        stashHref(a);
+        e.preventDefault();
+        if (typeof window.__offlineDocsActivateLink === 'function') {
+          window.__offlineDocsActivateLink(a);
+        }
+      }, true);
+
+      function boot() {
+        scanRoot(document);
+        new MutationObserver(function (mutations) {
+          mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+              if (node.nodeType !== 1) return;
+              if (node.matches && node.matches('a[href]')) stashHref(node);
+              scanRoot(node);
+            });
+          });
+        }).observe(document.documentElement, { childList: true, subtree: true });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+      } else {
+        boot();
+      }
+    }());
+  </script>
+  <link rel="stylesheet" href="css/docs.css" />
+  <script>
+    (function () {
+      var key = 'splunk_offline_docs_theme';
+      var stored = localStorage.getItem(key);
+      var dark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.dataset.theme = 'dark';
+    }());
+  </script>
+</head>
+<body class="app-booting">
+  <div id="app-loading" class="app-loading" aria-live="polite" aria-busy="true">
+    <div class="app-loading-card">
+      <p class="app-loading-title">Splunk Offline Docs</p>
+      <p class="app-loading-status" id="app-loading-status">Loading documentation…</p>
+      <div
+        class="app-loading-track"
+        id="app-loading-track"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div class="app-loading-fill" id="app-loading-fill"></div>
+      </div>
+    </div>
+  </div>
+  <div id="app-loading-bar" class="app-loading-bar" hidden aria-hidden="true">
+    <div class="app-loading-bar-fill" id="app-loading-bar-fill"></div>
+  </div>
+  <header class="topbar">
+    <nav class="product-tabs" id="product-tabs" aria-label="Products"></nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">Dark mode</button>
+    <input type="search" id="search" placeholder="Search documentation..." aria-label="Search" />
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <h1 class="product-heading" id="product-heading"></h1>
+      <div class="version-wrap" id="version-wrap" hidden>
+        <label class="version-label" for="version-select">Version</label>
+        <select id="version-select" aria-label="Documentation version"></select>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Table of contents"></nav>
+    </aside>
+    <main class="main">
+      <nav class="breadcrumbs" id="breadcrumbs" aria-label="Breadcrumb"></nav>
+      <article class="content" id="content">
+        <p class="placeholder">Select a topic from the navigation.</p>
+      </article>
+    </main>
+    <aside class="mini-toc" id="mini-toc" aria-label="On this page"></aside>
+  </div>
+  <script>
+    (function () {
+      var build = window.__OFFLINE_DOCS_BUILD__ || 'dev';
+      var link = document.querySelector('link[rel="stylesheet"]');
+      if (link) link.href = 'css/docs.css?v=' + build;
+      function loadScript(path, done) {
+        var el = document.createElement('script');
+        el.src = path + '?v=' + build;
+        el.onload = done || null;
+        document.body.appendChild(el);
+      }
+      loadScript('js/link-resolver.js', function () {
+        loadScript('js/app.js');
+      });
+    }());
+  </script>
+</body>
+</html>

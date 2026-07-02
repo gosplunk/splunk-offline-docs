@@ -1,0 +1,21 @@
+products:
+  enterprise:
+    title: Splunk Enterprise
+    root_path: splunk-enterprise
+    version_filter: "10.x_latest"
+    exclude_path_contains: []
+  es8:
+    title: Enterprise Security
+    root_path: splunk-enterprise-security-8
+    version_filter: none
+    exclude_path_contains: []
+  soar:
+    title: SOAR (On-premises)
+    root_path: splunk-soar/soar-on-premises
+    version_filter: none
+    exclude_path_contains: [soar-cloud, splunk-soar-cloud]
+  itsi:
+    title: IT Service Intelligence
+    root_path: splunk-it-service-intelligence
+    version_filter: none
+    exclude_path_contains: []

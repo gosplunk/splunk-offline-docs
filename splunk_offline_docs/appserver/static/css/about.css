@@ -1,0 +1,148 @@
+:root {
+  --splunk-orange: #ff6c0a;
+  --splunk-pink: #ec407a;
+  --text: #1b1f23;
+  --muted: #5c6570;
+  --border: #e2e4e8;
+  --panel: #f7f7f8;
+  --code-bg: #f4f4f5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Splunk Platform Sans", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  line-height: 1.6;
+  background: #fff;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--splunk-orange) 0%, var(--splunk-pink) 100%);
+  color: #fff;
+  padding: 2rem 2.5rem 2.5rem;
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hero img {
+  width: 140px;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.85rem;
+  font-weight: 700;
+}
+
+.hero .tagline {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 1.05rem;
+  max-width: 42rem;
+}
+
+.wrap {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+h2 {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.25rem;
+  color: var(--splunk-orange);
+}
+
+h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+p, ul, ol { margin: 0 0 1rem; }
+
+ul { padding-left: 1.35rem; }
+
+li { margin-bottom: 0.35rem; }
+
+code, pre {
+  font-family: "Splunk Platform Mono", ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+code {
+  background: var(--code-bg);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+}
+
+.note {
+  background: var(--panel);
+  border-left: 4px solid var(--splunk-pink);
+  padding: 0.85rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+}
+
+th {
+  background: var(--panel);
+  font-weight: 600;
+}
+
+.muted { color: var(--muted); }
+
+.footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.footer a {
+  color: var(--splunk-pink);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.logo-row img {
+  max-height: 48px;
+  width: auto;
+}

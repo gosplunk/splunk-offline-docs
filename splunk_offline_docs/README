@@ -1,0 +1,116 @@
+Splunk Offline Docs
+===================
+
+Offline browser for Splunk product documentation mirrored from help.splunk.com.
+Designed for air-gapped and restricted-network Splunk Enterprise deployments.
+
+Version: 0.4.4 (build 20260703u)
+Author: Joe Hagan (joehaga@cisco.com)
+
+Overview
+--------
+
+Splunk Offline Docs packages a local copy of Splunk on-premises documentation so
+users can search and browse help without reaching the public internet. The app
+provides a help.splunk.com-style navigation shell, version picker, dark mode,
+and internal link resolution across the bundled HTML topics.
+
+Products included in the default bundle
+---------------------------------------
+
+* Splunk Enterprise (latest 10.x line from help.splunk.com)
+* Splunk Enterprise Security 8
+* Splunk SOAR (on-premises)
+* Splunk IT Service Intelligence (ITSI)
+
+Content is scraped from help.splunk.com during bundle build. Cloud-only product
+trees (for example SOAR Cloud) are excluded by configuration.
+
+Navigation
+----------
+
+* Splunk Offline Docs — browse documentation (all users with app access)
+* About — this guide and bundle information (all users)
+* Configuration — scrape metrics, manual update, daily check toggle (admin only)
+
+Requirements
+------------
+
+* Splunk Enterprise 9.x or later (tested on 9.3.1)
+* Disk space for the documentation bundle (typically 700 MB–1 GB+ depending on products)
+* For building or updating content on a connected host: Python 3 with scraper
+  dependencies (see scraper/requirements.txt)
+
+Install
+-------
+
+1. Extract the app tarball into $SPLUNK_HOME/etc/apps/:
+
+     tar -xzf splunk_offline_docs.tgz -C $SPLUNK_HOME/etc/apps/
+
+2. Fix ownership:
+
+     chown -R splunk:splunk $SPLUNK_HOME/etc/apps/splunk_offline_docs
+
+3. Restart Splunk:
+
+     $SPLUNK_HOME/bin/splunk restart
+
+4. Open Splunk Web → Apps → Splunk Offline Docs, or use the app navigation bar.
+
+The documentation HTML lives under:
+
+  appserver/static/docs/
+
+Updating documentation
+----------------------
+
+From Configuration (admin):
+
+* Check now — compare local bundle versions against help.splunk.com (requires
+  outbound HTTPS from the Splunk server, or run check on a build host)
+* Incremental update — fetch missing topics and repair links
+* Full refresh — rebuild navigation and re-sync all configured products
+
+Daily auto-check is OFF by default for air-gapped sites. Enable it in
+Configuration only if the Splunk instance can reach help.splunk.com on a
+schedule.
+
+Settings are stored in:
+
+  local/settings.json
+
+REST API (admin)
+----------------
+
+Endpoint prefix:
+
+  /servicesNS/nobody/splunk_offline_docs/offline_docs/
+
+Actions:
+
+* status — bundle paths, versions, last sync metadata
+* check — remote version check
+* update — start incremental or full sync (POST, mode=incremental|full)
+* settings — read/write daily_check_enabled (GET/POST)
+
+Building a bundle (connected build host)
+----------------------------------------
+
+  cd Splunk4Offlinedocs
+  bash scripts/build_bundle.sh
+
+Transfer artifact to the target Splunk server and install as above.
+
+License and attribution
+-----------------------
+
+Documentation content © Splunk Inc. This app is an offline mirror for licensed
+Splunk deployments. Splunk, the Splunk logo, and related marks are trademarks
+of Splunk Inc. Pony artwork in app icons is an original illustration inspired by
+Splunk branding colors; not an official Splunk asset.
+
+Support
+-------
+
+For questions about this app, contact Joe Hagan at joehaga@cisco.com.

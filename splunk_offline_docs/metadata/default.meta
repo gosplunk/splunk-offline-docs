@@ -1,0 +1,7 @@
+[]
+access = read : [ * ], write : [ admin ]
+export = system
+
+[views/config]
+access = read : [ admin ], write : [ admin ]
+export = system

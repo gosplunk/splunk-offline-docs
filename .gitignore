@@ -1,0 +1,9 @@
+bundle/
+bundle-test/
+artifacts/
+.venv/
+__pycache__/
+*.pyc
+deploy/instance.env
+*.tgz
+.DS_Store

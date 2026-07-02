@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Splunk Offline Docs — Configuration</title>
+  <script>window.__OFFLINE_DOCS_BUILD__ = '20260703i';</script>
+  <link rel="stylesheet" href="css/config.css" />
+</head>
+<body>
+  <div id="app-root">
+    <p class="od-muted">Loading configuration…</p>
+  </div>
+  <script>
+    (function () {
+      var build = window.__OFFLINE_DOCS_BUILD__ || 'dev';
+      var link = document.querySelector('link[rel="stylesheet"]');
+      if (link) link.href = 'css/config.css?v=' + build;
+      var el = document.createElement('script');
+      el.src = 'js/config.js?v=' + build;
+      document.body.appendChild(el);
+    }());
+  </script>
+</body>
+</html>

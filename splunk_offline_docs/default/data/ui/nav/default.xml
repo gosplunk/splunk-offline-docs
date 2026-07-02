@@ -1,0 +1,5 @@
+<nav>
+  <view name="docs" default="true" />
+  <view name="about" />
+  <view name="config" />
+</nav>

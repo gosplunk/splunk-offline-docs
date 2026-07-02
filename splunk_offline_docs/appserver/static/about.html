@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — Splunk Offline Docs</title>
+  <link rel="stylesheet" href="css/about.css">
+</head>
+<body>
+  <header class="hero">
+    <img src="images/appIcon.png" alt="Buttercup reading documentation">
+    <div>
+      <h1>Splunk Offline Docs</h1>
+      <p class="tagline">Browse help.splunk.com product documentation inside Splunk Enterprise — no internet required after install.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="logo-row">
+      <img src="images/appLogo.png" alt="Splunk Offline Docs logo">
+    </div>
+
+    <h2>What this app does</h2>
+    <p>
+      Splunk Offline Docs mirrors on-premises Splunk product documentation from
+      <a href="https://help.splunk.com" target="_blank" rel="noopener noreferrer">help.splunk.com</a>
+      into your Splunk instance. Users get searchable HTML topics, product navigation,
+      version selection, and dark mode — similar to the online help experience.
+    </p>
+
+    <h2>Documentation products in the bundle</h2>
+    <table>
+      <thead>
+        <tr><th>Product</th><th>Source on help.splunk.com</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Splunk Enterprise</td>
+          <td><code>splunk-enterprise</code></td>
+          <td>Latest 10.x line</td>
+        </tr>
+        <tr>
+          <td>Enterprise Security</td>
+          <td><code>splunk-enterprise-security-8</code></td>
+          <td>ES 8 documentation tree</td>
+        </tr>
+        <tr>
+          <td>SOAR (on-premises)</td>
+          <td><code>splunk-soar/soar-on-premises</code></td>
+          <td>Cloud SOAR docs excluded</td>
+        </tr>
+        <tr>
+          <td>IT Service Intelligence</td>
+          <td><code>splunk-it-service-intelligence</code></td>
+          <td>ITSI on-prem docs</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Not in the default bundle:</strong> Splunk Cloud-only products, Observability Cloud,
+      UBA, Attack Analyzer, and other help.splunk.com trees not listed above. Add products in
+      <code>scraper/products.yaml</code> and rebuild the bundle to include more.
+    </div>
+
+    <h2>App navigation</h2>
+    <ul>
+      <li><strong>Splunk Offline Docs</strong> — documentation browser (all users with app access)</li>
+      <li><strong>About</strong> — this page</li>
+      <li><strong>Configuration</strong> — bundle metrics, manual updates, daily check toggle (admins only)</li>
+    </ul>
+
+    <h2>Install</h2>
+    <ol>
+      <li>Extract the app into <code>$SPLUNK_HOME/etc/apps/</code></li>
+      <li>Set ownership: <code>chown -R splunk:splunk .../splunk_offline_docs</code></li>
+      <li>Restart Splunk</li>
+      <li>Open the app from Splunk Web navigation</li>
+    </ol>
+
+    <pre>tar -xzf splunk_offline_docs.tgz -C $SPLUNK_HOME/etc/apps/
+chown -R splunk:splunk $SPLUNK_HOME/etc/apps/splunk_offline_docs
+$SPLUNK_HOME/bin/splunk restart</pre>
+
+    <h2>Updating content</h2>
+    <p>Admins can use the <strong>Configuration</strong> view:</p>
+    <ul>
+      <li><strong>Check now</strong> — compare local versions against help.splunk.com</li>
+      <li><strong>Incremental update</strong> — fetch missing pages and repair links</li>
+      <li><strong>Full refresh</strong> — rebuild navigation and re-sync all products</li>
+    </ul>
+    <p class="muted">
+      Daily auto-check is <strong>disabled by default</strong> for air-gapped deployments.
+      Enable it only when the Splunk server can reach help.splunk.com on a schedule.
+    </p>
+
+    <h2>REST API</h2>
+    <p>Admin endpoint prefix:</p>
+    <pre>/servicesNS/nobody/splunk_offline_docs/offline_docs/</pre>
+    <p>Actions: <code>status</code>, <code>check</code>, <code>update</code> (POST), <code>settings</code> (GET/POST).</p>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Splunk Enterprise 9.x+ (tested on 9.3.1)</li>
+      <li>~700 MB–1 GB disk for the documentation bundle</li>
+      <li>Outbound HTTPS only needed for checks/updates (not for day-to-day browsing)</li>
+    </ul>
+
+    <h2>Building a new bundle</h2>
+    <p>On a connected build host with the project repository:</p>
+    <pre>cd Splunk4Offlinedocs
+bash scripts/build_bundle.sh</pre>
+    <p>Transfer <code>artifacts/splunk_offline_docs.tgz</code> to the target Splunk server and install.</p>
+
+    <h2>License</h2>
+    <p>
+      Documentation content is © Splunk Inc. This app provides an offline mirror for licensed
+      Splunk deployments. App icon artwork is an original illustration using Splunk brand colors.
+    </p>
+
+    <footer class="footer">
+      Splunk Offline Docs v0.4.4 · Author:
+      <a href="mailto:joehaga@cisco.com">Joe Hagan</a>
+    </footer>
+  </main>
+</body>
+</html>

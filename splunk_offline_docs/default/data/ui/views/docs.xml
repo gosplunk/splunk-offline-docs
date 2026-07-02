@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dashboard version="1.1" theme="light" isVisible="true" hideEdit="true" script="offline_shell.js">
+  <label>Splunk Offline Docs</label>
+</dashboard>
