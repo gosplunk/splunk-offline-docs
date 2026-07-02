@@ -13,7 +13,7 @@ Offline [help.splunk.com](https://help.splunk.com) browser Splunk app for air-ga
 **Use the full release tarball** — it includes the pre-scraped documentation bundle (~19k topics). No internet access required to install or browse.
 
 1. Go to **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)**
-2. Download **`splunk_offline_docs_full.tgz`** from the latest release (v0.4.6+)
+2. Download **`splunk_offline_docs_full.tgz`** from the latest release (v0.4.8+)
 3. Install:
 
 ```bash
