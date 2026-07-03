@@ -12,10 +12,10 @@ products:
   soar:
     title: SOAR (On-premises)
     root_path: splunk-soar/soar-on-premises
-    version_filter: none
+    version_filter: latest_2
     exclude_path_contains: [soar-cloud, splunk-soar-cloud]
   itsi:
     title: IT Service Intelligence
     root_path: splunk-it-service-intelligence
-    version_filter: none
+    version_filter: latest_2
     exclude_path_contains: []

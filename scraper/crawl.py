@@ -17,6 +17,12 @@ from scraper.content import (
     normalize_enterprise_path,
     resolve_enterprise_version,
 )
+from scraper.versions import (
+    latest_version_allowlist,
+    path_matches_version_allowlist,
+    version_filter_keep,
+    version_sort_key,
+)
 from scraper.http_client import HelpClient
 from scraper.links import build_link_index, rewrite_topic_html
 from scraper.nav import NavNode, build_product_nav, iter_topic_paths
@@ -65,6 +71,16 @@ def crawl_product(
     )
 
     paths: Set[str] = set()
+    all_nav_paths = list(iter_topic_paths(nav_root))
+    version_allowlist = None
+    keep_n = version_filter_keep(cfg)
+    if keep_n:
+        version_allowlist = latest_version_allowlist(all_nav_paths, keep_n)
+        log(
+            "version allowlist: "
+            + ", ".join(sorted(version_allowlist, key=version_sort_key, reverse=True))
+        )
+
     enterprise_version = None
     if cfg.get("version_filter") == "10.x_latest" and pid == "enterprise":
         sample = next(
@@ -76,13 +92,17 @@ def crawl_product(
         )
         log(f"enterprise version: {enterprise_version or 'unknown'}")
 
-    for p in iter_topic_paths(nav_root):
+    for p in all_nav_paths:
         if should_exclude(p, excludes):
             continue
         if pid == "enterprise":
             p = normalize_enterprise_path(p, enterprise_version)
             if not p:
                 continue
+        if version_allowlist is not None and not path_matches_version_allowlist(
+            p, version_allowlist
+        ):
+            continue
         paths.add(p)
 
     log(f"fetching {len(paths)} topics...")

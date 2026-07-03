@@ -15,6 +15,11 @@ from scraper.crawl import load_products, plain_text, save_checkpoint, should_exc
 from scraper.http_client import HelpClient
 from scraper.links import build_link_index, rewrite_topic_html
 from scraper.nav import NavNode, iter_topic_paths
+from scraper.versions import (
+    latest_version_allowlist,
+    path_matches_version_allowlist,
+    version_filter_keep,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -95,6 +100,12 @@ def main():
             continue
         cfg = products_cfg[pid]
         root = tree_from_dict(tree_dict)
+        all_paths = list(iter_topic_paths(root))
+        version_allowlist = None
+        keep_n = version_filter_keep(cfg)
+        if keep_n:
+            version_allowlist = latest_version_allowlist(all_paths, keep_n)
+
         enterprise_version = None
         if pid == "enterprise":
             sample = next(
@@ -105,13 +116,17 @@ def main():
                 client, sample, version_cache
             )
 
-        for path in iter_topic_paths(root):
+        for path in all_paths:
             if path == cfg["root_path"]:
                 continue
             if should_exclude(path, cfg.get("exclude_path_contains", [])):
                 continue
             if pid == "enterprise":
                 path = normalize_enterprise_path(path, enterprise_version) or path
+            if version_allowlist is not None and not path_matches_version_allowlist(
+                path, version_allowlist
+            ):
+                continue
             if path in done:
                 continue
             try:
