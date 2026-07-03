@@ -10,10 +10,10 @@ Offline [help.splunk.com](https://help.splunk.com) browser Splunk app for air-ga
 
 ## Download (air-gapped ready)
 
-**Use the full release tarball** — it includes the pre-scraped documentation bundle (~19k topics). No internet access required to install or browse.
+**Use the full release tarball** — it includes the pre-scraped documentation bundle (~16k topics). No internet access required to install or browse.
 
 1. Go to **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)**
-2. Download **`splunk_offline_docs_full.tgz`** from the latest release (v0.4.8+)
+2. Download **`splunk_offline_docs_full.tgz`** from the latest release (v0.4.9+)
 3. Install:
 
 ```bash
@@ -35,12 +35,12 @@ $SPLUNK_HOME/bin/splunk restart
 | SOAR (on-premises) | `splunk-soar/soar-on-premises` |
 | IT Service Intelligence | `splunk-it-service-intelligence` |
 
-~19,000 HTML topics, search index, navigation, and link resolution — ready offline on first install.
+~16,000 HTML topics, search index, navigation, and link resolution — ready offline on first install.
 
 ## Requirements
 
 - Splunk Enterprise 9.x or later
-- ~700 MB disk for the installed app with documentation bundle
+- ~625 MB disk for the installed app with documentation bundle
 
 ## Updating documentation (optional)
 
