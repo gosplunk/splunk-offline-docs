@@ -5,7 +5,7 @@ require([
 ], function ($, _, utils) {
     'use strict';
 
-    var BUILD = '20260703q';
+    var BUILD = '20260706b';
     var APP = 'splunk_offline_docs';
     var pollTimer = null;
     var $root = null;
@@ -59,15 +59,39 @@ require([
         return new Error(msg);
     }
 
+    function formKey() {
+        if (utils.getFormKey) {
+            try { return utils.getFormKey() || ''; } catch (_e) { /* ignore */ }
+        }
+        var $meta = $('meta[name="splunk-form-key"]');
+        return $meta.length ? ($meta.attr('content') || '') : '';
+    }
+
+    function requestHeaders(method, body, useForm) {
+        var headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (body && !useForm) headers['Content-Type'] = 'application/json';
+        if (method !== 'GET') {
+            var fk = formKey();
+            if (fk) headers['X-Splunk-Form-Key'] = fk;
+        }
+        return headers;
+    }
+
     function apiRequest(method, member, body) {
-        return $.ajax({
+        var timeoutMs = (method === 'POST' && member === 'check') ? 600000 : 120000;
+        var useForm = method === 'POST' && !!body;
+        var ajaxOpts = {
             url: apiUrl(member),
             type: method,
             dataType: 'json',
-            timeout: 60000,
-            data: body ? JSON.stringify(body) : undefined,
-            contentType: body ? 'application/json' : undefined,
-        }).then(function (data) {
+            timeout: timeoutMs,
+            headers: requestHeaders(method, body, useForm),
+        };
+        if (useForm) {
+            ajaxOpts.data = { payload: JSON.stringify(body) };
+            ajaxOpts.contentType = 'application/x-www-form-urlencoded; charset=UTF-8';
+        }
+        return $.ajax(ajaxOpts).then(function (data) {
             return unwrapPayload(data);
         }, function (xhr, status) {
             return $.Deferred().reject(ajaxError(xhr, status)).promise();
@@ -233,6 +257,7 @@ require([
             + '<dt>Bundle size</dt><dd>' + escapeHtml((scrape.disk || {}).total_human || '—') + '</dd>'
             + '<dt>Last sync</dt><dd>' + fmtTime((scrape.timestamps || {}).last_sync_at || (bundle.meta || {}).updated_at) + '</dd></dl></section>'
             + '<section class="od-card"><h2>Update check</h2><p>' + updatesBadge + '</p>'
+            + (check.error ? '<p class="od-error">' + escapeHtml(check.error) + '</p>' : '')
             + '<dl class="od-dl"><dt>Last checked</dt><dd>' + fmtTime(check.checked_at) + '</dd></dl>'
             + '<div class="od-actions"><button type="button" class="od-btn" id="od-check-btn">Check now</button></div></section>'
             + '<section class="od-card"><h2>Scrape / update</h2><p>' + jobBadge + '</p>'

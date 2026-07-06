@@ -24,6 +24,14 @@ def parse_in_string(in_string) -> dict:
         return {}
     if isinstance(in_string, bytes):
         in_string = in_string.decode("utf-8", errors="replace")
+    stripped = in_string.strip()
+    if stripped.startswith("{"):
+        try:
+            parsed = json.loads(stripped)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
     parsed = parse_qs(in_string, keep_blank_values=True)
     result = {}
     for key, values in parsed.items():
@@ -42,13 +50,44 @@ def _json_response(payload: dict, status: int = 200) -> dict:
 
 
 def _parse_body(in_dict: dict) -> dict:
-    body = in_dict.get("payload") or ""
-    if not body:
-        return {}
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        return {}
+    body = in_dict.get("payload") or in_dict.get("body") or ""
+    if isinstance(body, dict):
+        return body
+    if body:
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError:
+            pass
+
+    allowed = {
+        "daily_check_enabled",
+        "enabled",
+        "mode",
+        "products",
+        "rate_limit",
+        "python",
+        "scraper_root",
+    }
+    extracted = {}
+    for key in allowed:
+        if key in in_dict:
+            extracted[key] = in_dict[key]
+
+    query = in_dict.get("query") or {}
+    if isinstance(query, str):
+        try:
+            query = json.loads(query)
+        except json.JSONDecodeError:
+            query = dict(parse_qs(query, keep_blank_values=True))
+            query = {
+                k: (v[-1] if isinstance(v, list) else v)
+                for k, v in query.items()
+            }
+    if isinstance(query, dict):
+        for key in allowed:
+            if key in query and key not in extracted:
+                extracted[key] = query[key]
+    return extracted
 
 
 def _member_from_path(path: str) -> str:
@@ -56,6 +95,10 @@ def _member_from_path(path: str) -> str:
     if not path:
         return "status"
     return path.split("/")[-1]
+
+
+def _coerce_bool(raw) -> bool:
+    return svc.coerce_bool(raw)
 
 
 class OfflineDocsHandler(PersistentServerConnectionApplication):
@@ -68,6 +111,11 @@ class OfflineDocsHandler(PersistentServerConnectionApplication):
             method = (in_dict.get("method") or "GET").upper()
             member = _member_from_path(in_dict.get("path", ""))
             query = in_dict.get("query", {}) or {}
+            if isinstance(query, str):
+                try:
+                    query = json.loads(query)
+                except json.JSONDecodeError:
+                    query = {}
             body = _parse_body(in_dict)
 
             if member in ("status", "offline_docs"):
@@ -75,9 +123,10 @@ class OfflineDocsHandler(PersistentServerConnectionApplication):
 
             if member == "check":
                 if method == "GET":
-                    return _json_response(svc.read_json(
-                        svc.state_path("check_report.json"), {},
-                    ) or {"message": "No check has been run yet"})
+                    cached = svc.read_json(svc.state_path("check_report.json"), {})
+                    if cached:
+                        return _json_response(cached)
+                    return _json_response({"message": "No check has been run yet"})
                 report = svc.run_check(save=True)
                 return _json_response(report)
 
@@ -89,11 +138,35 @@ class OfflineDocsHandler(PersistentServerConnectionApplication):
                 code = 200 if result.get("ok") else 409
                 return _json_response(result, code)
 
+            if member == "daily_check":
+                raw = body.get("enabled")
+                if raw is None and isinstance(query, dict):
+                    raw = query.get("enabled")
+                if raw is None:
+                    raw = in_dict.get("enabled")
+                if raw is None:
+                    return _json_response({"error": "enabled parameter required"}, 400)
+                enabled = _coerce_bool(raw)
+                saved = svc.save_settings({"daily_check_enabled": enabled})
+                return _json_response({
+                    "ok": True,
+                    "daily_check_enabled": saved.get("daily_check_enabled", False),
+                    "settings": saved,
+                })
+
             if member == "settings":
                 if method == "GET":
+                    raw = in_dict.get("daily_check_enabled")
+                    if raw is None and isinstance(query, dict):
+                        raw = query.get("daily_check_enabled")
+                    if raw is not None:
+                        saved = svc.save_settings({"daily_check_enabled": _coerce_bool(raw)})
+                        return _json_response({"ok": True, "settings": saved})
                     return _json_response(svc.load_settings())
                 if method != "POST":
                     return _json_response({"error": "POST required"}, 405)
+                if not body:
+                    return _json_response({"error": "No settings provided"}, 400)
                 saved = svc.save_settings(body)
                 return _json_response({"ok": True, "settings": saved})
 

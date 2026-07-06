@@ -45,7 +45,7 @@
       'X-Requested-With': 'XMLHttpRequest',
     };
     var fk = formKey();
-    if (fk) headers['X-Splunk-Form-Key'] = fk;
+    if (fk && method !== 'GET') headers['X-Splunk-Form-Key'] = fk;
     if (body) headers['Content-Type'] = 'application/json';
 
     return fetch(url, {
@@ -136,6 +136,7 @@
       + '<dt>Topics stored</dt><dd>' + (bundle.topic_count || 0).toLocaleString() + '</dd>'
       + '<dt>Last sync</dt><dd>' + fmtTime((bundle.meta || {}).last_sync_at) + '</dd></dl></section>'
       + '<section class="od-card"><h2>Update check</h2><p>' + updatesBadge + '</p>'
+      + (check.error ? '<p class="od-error">' + escapeHtml(check.error) + '</p>' : '')
       + '<dl class="od-dl"><dt>Last checked</dt><dd>' + fmtTime(check.checked_at) + '</dd>'
       + '<dt>Daily check</dt><dd>' + (settings.daily_check_enabled ? 'Enabled (every 24h)' : 'Disabled') + '</dd></dl>'
       + '<div class="od-actions"><button type="button" class="od-btn" id="od-check-btn">Check now</button></div></section>'

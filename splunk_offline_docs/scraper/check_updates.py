@@ -27,7 +27,7 @@ def load_products(cfg_path: Path) -> dict:
 
 def help_child_paths(client: HelpClient, parent_path: str, root_path: str) -> List[str]:
     html = client.get(NAV_PREFIX + parent_path)
-    items = _parse_toc_children(BeautifulSoup(html, "lxml"), root_path)
+    items = _parse_toc_children(BeautifulSoup(html, "html.parser"), root_path)
     return [path for path, _title, _has_kids in items]
 
 

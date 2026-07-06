@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<dashboard version="1.1" theme="light" isVisible="true" hideEdit="true" script="offline_config_panel.js">
+<dashboard version="1.1" theme="light" isVisible="true" hideEdit="true" script="offline_config_v4.js">
   <label>Configuration</label>
 </dashboard>

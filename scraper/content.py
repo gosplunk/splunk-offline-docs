@@ -114,14 +114,14 @@ def _extract_topic_from_soup(soup: BeautifulSoup, path: str) -> Tuple[str, str, 
 
 def fetch_topic(client: HelpClient, path: str) -> TopicContent:
     html = client.get(FRAGMENT_PREFIX + path)
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     resource_ids = extract_meta_resource_ids(soup)
     title, body_html, crumbs = _extract_topic_from_soup(soup, path)
 
     # Manual hubs and some branch pages return an empty fragment; use full page.
     if len(body_html.strip()) < 80:
         html = client.get(f"/en/{path}")
-        soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(html, "html.parser")
         resource_ids = extract_meta_resource_ids(soup) or resource_ids
         full_title, full_body, full_crumbs = _extract_topic_from_soup(soup, path)
         if len(full_body.strip()) > len(body_html.strip()):
@@ -151,7 +151,7 @@ def resolve_enterprise_version(client: HelpClient, sample_path: str, cache: dict
     if "enterprise_version" in cache:
         return cache["enterprise_version"]
     page = client.get(f"/en/{sample_path}")
-    soup = BeautifulSoup(page, "lxml")
+    soup = BeautifulSoup(page, "html.parser")
     opts = _parse_version_options(soup)
     best = pick_latest_10x_version(opts)
     if best:

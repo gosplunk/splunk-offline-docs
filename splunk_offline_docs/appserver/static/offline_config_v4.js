@@ -6,11 +6,13 @@ require([
 ], function ($, mvc, _, utils) {
     'use strict';
 
-    var BUILD = '20260706c';
+    var BUILD = '20260706f';
     var APP = 'splunk_offline_docs';
     var service = mvc.createService({ owner: 'nobody', app: APP });
     var pollTimer = null;
     var $root = null;
+    var delegated = false;
+    var suppressToggleChange = false;
 
     function escapeHtml(text) {
         return String(text)
@@ -46,9 +48,9 @@ require([
         return 'Request failed';
     }
 
-    function apiRequest(method, member, body) {
+    function apiRequest(method, member, body, queryExtras) {
         var path = 'offline_docs/' + member;
-        var opts = { output_mode: 'json' };
+        var opts = $.extend({ output_mode: 'json' }, queryExtras || {});
         return $.Deferred(function (dfd) {
             var done = function (err, response) {
                 if (err || (response && response.messages && response.messages.length)) {
@@ -143,9 +145,8 @@ require([
             + '</tbody></table>';
     }
 
-    function renderDailyCheckToggle(enabled) {
-        var onClass = enabled ? ' od-toggle-on' : '';
-        var aria = enabled ? 'true' : 'false';
+    function renderDailyCheckToggle(enabled, lastCheckedAt) {
+        var checked = enabled ? ' checked' : '';
         var status = enabled
             ? 'On — Splunk will check help.splunk.com once every 24 hours.'
             : 'Off — recommended for air-gapped hosts (no outbound HTTPS).';
@@ -153,13 +154,21 @@ require([
             + '<section class="od-card od-wide od-scheduled-card">'
             + '<h2>Daily auto-check</h2>'
             + '<div class="od-scheduled-row">'
-            + '<button type="button" class="od-toggle-btn' + onClass + '" id="od-daily-check-toggle" role="switch" aria-checked="' + aria + '">'
+            + '<label class="od-toggle">'
+            + '<input type="checkbox" id="od-daily-check-toggle"' + checked
+            + ' aria-label="Enable daily documentation update check">'
             + '<span class="od-toggle-track"><span class="od-toggle-thumb"></span></span>'
-            + '</button>'
+            + '</label>'
             + '<div class="od-scheduled-copy">'
             + '<strong>Auto-check daily for documentation updates</strong>'
-            + '<p class="od-toggle-hint od-muted">' + escapeHtml(status) + '</p>'
-            + '</div></div></section>';
+            + '<p class="od-toggle-hint od-muted" id="od-daily-check-hint">' + escapeHtml(status) + '</p>'
+            + '<p class="od-toggle-hint od-muted" id="od-daily-check-status" aria-live="polite"></p>'
+            + '</div>'
+            + '<div class="od-scheduled-meta">'
+            + '<span class="od-muted">Last checked</span>'
+            + '<strong>' + escapeHtml(fmtTime(lastCheckedAt)) + '</strong>'
+            + '</div>'
+            + '</div></section>';
     }
 
     function renderScrapeSection(scrape) {
@@ -219,7 +228,7 @@ require([
             + '<div class="od-config">'
             + '<header class="od-header"><h1>Documentation Configuration</h1>'
             + '<p class="od-lead">Check help.splunk.com for new versions and topics, then scrape updates into the offline bundle.</p></header>'
-            + renderDailyCheckToggle(!!settings.daily_check_enabled)
+            + renderDailyCheckToggle(!!settings.daily_check_enabled, check.checked_at)
             + renderScrapeSection(scrape)
             + '<div class="od-grid">'
             + '<section class="od-card"><h2>Bundle</h2>'
@@ -241,7 +250,8 @@ require([
             + '</div></section></div>'
             + '<section class="od-card od-wide"><h2>Update check — products</h2>' + renderProductRows(check.products) + '</section>'
             + '<section class="od-card od-wide"><h2>Update log</h2>' + logHtml + '</section>'
-            + '<p class="od-footnote">Scraper source: <code>' + escapeHtml(settings.scraper_root || '—') + '</code></p>'
+            + '<p class="od-footnote">Scraper source: <code>' + escapeHtml(settings.scraper_root || '—') + '</code>'
+            + ' · UI ' + escapeHtml(BUILD) + '</p>'
             + '</div>';
     }
 
@@ -264,22 +274,45 @@ require([
         });
     }
 
-    function bindActions() {
-        $('#od-check-btn').off('click').on('click', function () {
+    function setDailyCheckStatus(text, isError) {
+        var $el = $('#od-daily-check-status');
+        if (!$el.length) return;
+        $el.text(text || '');
+        $el.toggleClass('od-error', !!isError);
+    }
+
+    function saveDailyCheck(enabled) {
+        setDailyCheckStatus('Saving…');
+        setBusy(true);
+        return apiRequest('GET', 'settings', null, {
+            daily_check_enabled: enabled ? 'true' : 'false',
+        })
+            .then(function (data) {
+                var on = !!(data.settings && data.settings.daily_check_enabled);
+                setDailyCheckStatus(on ? 'Saved — daily check is on.' : 'Saved — daily check is off.');
+                return refresh();
+            })
+            .fail(function (err) {
+                setDailyCheckStatus((err && err.message) ? err.message : 'Save failed.', true);
+                return refresh();
+            })
+            .always(function () {
+                setBusy(false);
+            });
+    }
+
+    function bindDelegatedActions() {
+        if (!$root || !$root.length) return;
+        $root.off('.odcfg');
+        $root.on('change.odcfg', '#od-daily-check-toggle', function () {
+            if (suppressToggleChange) return;
+            saveDailyCheck(!!this.checked);
+        });
+        $root.on('click.odcfg', '#od-check-btn', function () {
             setBusy(true);
             apiRequest('POST', 'check').then(refresh).fail(showError).always(function () { setBusy(false); });
         });
-        $('#od-daily-check-toggle').off('click').on('click', function () {
-            var $btn = $(this);
-            if ($btn.prop('disabled')) return;
-            var enabled = $btn.attr('aria-checked') !== 'true';
-            setBusy(true);
-            apiRequest('POST', 'daily_check', { enabled: enabled ? '1' : '0' })
-                .then(refresh)
-                .fail(showError)
-                .always(function () { setBusy(false); });
-        });
-        $('#od-update-btn').off('click').on('click', function () {
+        $root.on('click.odcfg', '#od-update-btn', function () {
             if (!window.confirm('Start incremental scrape from help.splunk.com? This may take several minutes.')) return;
             setBusy(true);
             apiRequest('POST', 'update', { mode: 'incremental' }).then(function () {
@@ -287,7 +320,7 @@ require([
                 return refresh();
             }).fail(showError).always(function () { setBusy(false); });
         });
-        $('#od-update-full-btn').off('click').on('click', function () {
+        $root.on('click.odcfg', '#od-update-full-btn', function () {
             if (!window.confirm('Start full navigation refresh and scrape? This takes longer but picks up new product versions.')) return;
             setBusy(true);
             apiRequest('POST', 'update', { mode: 'full' }).then(function () {
@@ -295,12 +328,15 @@ require([
                 return refresh();
             }).fail(showError).always(function () { setBusy(false); });
         });
+        delegated = true;
     }
 
     function refresh() {
         return apiRequest('GET', 'status').then(function (data) {
+            suppressToggleChange = true;
             mount(renderStatus(data));
-            bindActions();
+            suppressToggleChange = false;
+            if (!delegated) bindDelegatedActions();
             if (data.job && data.job.status === 'running') startPolling();
             return data;
         });
@@ -338,9 +374,16 @@ require([
         return $('<div id="offline-docs-config-root" class="offline-docs-config-root"/>').appendTo($target);
     }
 
+    window.OfflineDocsConfig = {
+        build: BUILD,
+        saveDailyCheck: saveDailyCheck,
+        refresh: refresh
+    };
+
     function init() {
         ensureCss();
         $root = findRoot();
+        bindDelegatedActions();
         mount('<p class="od-muted od-config">Loading configuration…</p>');
         refresh().fail(showError);
     }

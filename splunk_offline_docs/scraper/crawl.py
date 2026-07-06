@@ -41,7 +41,7 @@ def should_exclude(path: str, excludes: List[str]) -> bool:
 
 
 def plain_text(html: str) -> str:
-    return BeautifulSoup(html, "lxml").get_text(" ", strip=True)
+    return BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
 
 
 def save_checkpoint(path: Path, checkpoint: dict) -> None:

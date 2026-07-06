@@ -324,7 +324,7 @@ def rewrite_topic_html(
     current_path: str,
     tail_candidates: Optional[dict] = None,
 ) -> str:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     paths = link_index.get("paths", {})
     suffixes = link_index.get("suffixes", {})
     rids = link_index.get("resourceIds", {})

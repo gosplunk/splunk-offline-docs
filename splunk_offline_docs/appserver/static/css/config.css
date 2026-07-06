@@ -127,6 +127,22 @@ body {
   gap: 1rem;
 }
 
+.od-scheduled-meta {
+  margin-left: auto;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #5c6570;
+  line-height: 1.4;
+  padding-top: 0.15rem;
+}
+
+.od-scheduled-meta strong {
+  display: block;
+  color: #1b1f23;
+  font-weight: 600;
+}
+
 .od-scheduled-copy strong {
   display: block;
   margin-bottom: 0.25rem;

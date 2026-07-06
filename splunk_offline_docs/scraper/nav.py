@@ -150,7 +150,7 @@ def _fetch_nav_children(
         _log(f"  nav: WARN branch {branch_path}: {exc}", log)
         return []
 
-    items = _parse_toc_children(BeautifulSoup(html, "lxml"), root_path)
+    items = _parse_toc_children(BeautifulSoup(html, "html.parser"), root_path)
     nodes: List[NavNode] = []
     for path, title, has_children in items:
         children: List[NavNode] = []

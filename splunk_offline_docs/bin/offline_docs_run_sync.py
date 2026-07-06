@@ -53,9 +53,7 @@ def main() -> int:
         root = svc.project_root()
         py = svc.python_bin()
         out = str(svc.bundle_dir())
-        env = dict(**{k: v for k, v in __import__("os").environ.items()})
-        env["PYTHONPATH"] = str(root)
-        env["PYTHONUNBUFFERED"] = "1"
+        env = svc.scraper_env()
 
         refresh_flag = ["--refresh"] if args.mode == "full" else []
         run_step(

@@ -77,7 +77,7 @@ def load_settings() -> dict:
     defaults = {
         "products": DEFAULT_PRODUCTS,
         "rate_limit": 0.35,
-        "python": shutil.which("python3") or "/usr/bin/python3",
+        "python": "/usr/bin/python3",
         "scraper_root": "",
         "daily_check_enabled": False,
     }
@@ -135,7 +135,31 @@ def project_root() -> Path:
 
 
 def python_bin() -> str:
-    return load_settings().get("python") or shutil.which("python3") or "/usr/bin/python3"
+    """Return system Python for scraper subprocesses (not Splunk's embedded interpreter)."""
+    configured = (load_settings().get("python") or "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+    for candidate in ("/usr/bin/python3", "/usr/local/bin/python3"):
+        if Path(candidate).is_file():
+            return candidate
+    found = shutil.which("python3")
+    if found and "splunk" not in found.replace("\\", "/").lower():
+        return found
+    return "/usr/bin/python3"
+
+
+def scraper_env() -> dict:
+    env = os.environ.copy()
+    root = project_root()
+    app = app_root()
+    paths = [str(root), str(app)]
+    vendor = app / "lib" / "python"
+    if vendor.is_dir():
+        paths.append(str(vendor))
+    env["PYTHONPATH"] = os.pathsep.join(paths)
+    env["SPLUNK_OFFLINE_DOCS_APP"] = str(app)
+    env["PYTHONUNBUFFERED"] = "1"
+    return env
 
 
 def ensure_bundle_seeded() -> None:
@@ -392,8 +416,6 @@ def run_check(save: bool = True) -> dict:
     if not products_yaml.is_file():
         products_yaml = scraper_root() / "scraper" / "products.yaml"
 
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(project_root())
     cmd = [
         python_bin(),
         str(project_root() / "scraper" / "check_updates.py"),
@@ -407,18 +429,23 @@ def run_check(save: bool = True) -> dict:
         cmd,
         capture_output=True,
         text=True,
-        env=env,
+        env=scraper_env(),
         timeout=600,
         check=False,
     )
     report = read_json(state_path("check_report.json"), {})
-    if not report:
-        report = {
-            "checked_at": datetime.now(timezone.utc).isoformat(),
-            "updates_available": False,
-            "products": [],
-            "error": proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}",
-        }
+    if not report or not report.get("products"):
+        err = proc.stderr.strip() or proc.stdout.strip()
+        if not report:
+            report = {
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "updates_available": False,
+                "products": [],
+            }
+        if proc.returncode != 0 and err:
+            report["error"] = err
+        elif proc.returncode != 0:
+            report["error"] = f"check_updates.py exited with code {proc.returncode}"
         if save:
             write_json(state_path("check_report.json"), report)
     report["exit_code"] = proc.returncode
@@ -441,9 +468,7 @@ def start_update(mode: str = "incremental") -> dict:
     write_json(state_path("update_job.json"), job)
 
     script = app_root() / "bin" / "offline_docs_run_sync.py"
-    env = os.environ.copy()
-    env["SPLUNK_OFFLINE_DOCS_APP"] = str(app_root())
-    env["PYTHONUNBUFFERED"] = "1"
+    env = scraper_env()
     with open(log_path, "a", encoding="utf-8") as logf:
         proc = subprocess.Popen(
             [
@@ -462,15 +487,30 @@ def start_update(mode: str = "incremental") -> dict:
     return {"ok": True, "job": job}
 
 
+def coerce_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in ("0", "false", "no", "off", "disabled"):
+        return False
+    if text in ("1", "true", "yes", "on", "enabled"):
+        return True
+    return False
+
+
 def save_settings(updates: dict) -> dict:
     current = load_settings()
     allowed = {"products", "rate_limit", "python", "scraper_root", "daily_check_enabled"}
+    local = read_json(state_path("settings.json"), {})
     for key, value in updates.items():
         if key not in allowed or value is None:
             continue
         if key == "daily_check_enabled":
-            current[key] = value in (True, "true", "1", 1, "yes", "on")
+            current[key] = coerce_bool(value)
         else:
             current[key] = value
-    write_json(state_path("settings.json"), current)
+    for key in allowed:
+        if key in current:
+            local[key] = current[key]
+    write_json(state_path("settings.json"), local)
     return current

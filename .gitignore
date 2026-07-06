@@ -6,4 +6,4 @@ __pycache__/
 *.pyc
 deploy/instance.env
 *.tgz
-.DS_Store
+splunk_offline_docs/local/

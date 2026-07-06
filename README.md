@@ -1,6 +1,8 @@
 # Splunk Offline Docs
 
-Offline [help.splunk.com](https://help.splunk.com) browser Splunk app for air-gapped and restricted-network Splunk Enterprise deployments.
+**Browse [help.splunk.com](https://help.splunk.com) inside Splunk Enterprise — with no internet after install.**
+
+A Splunk app for **air-gapped and restricted networks**. It ships a pre-built copy of Splunk product documentation (search, navigation, version picker, dark mode) so admins and users get the same experience as the online help site without outbound HTTPS for day-to-day use.
 
 <p align="center">
   <img src="docs/images/hero-banner.png" alt="Splunk Offline Docs" width="720" />
@@ -8,13 +10,29 @@ Offline [help.splunk.com](https://help.splunk.com) browser Splunk app for air-ga
 
 **Author:** [Joe Hagan](mailto:joehaga@cisco.com)
 
+## Screenshots
+
+| Documentation browser | Configuration (updates) |
+|---|---|
+| ![Docs browser](docs/images/screenshot-docs-browser.png) | ![Configuration](docs/images/screenshot-configuration.png) |
+
+| Dark mode | About |
+|---|---|
+| ![Dark mode](docs/images/screenshot-docs-dark.png) | ![About](docs/images/screenshot-about.png) |
+
+## What you get
+
+- **Splunk Enterprise** (10.x), **Enterprise Security 8**, **SOAR** (on-premises), **ITSI** — ~16k HTML topics
+- Full-text **search**, product **tabs**, **version** dropdowns, and **offline link resolution**
+- **Configuration** view: check for updates, incremental/full scrape, daily auto-check toggle
+- **About** view with install and admin reference
+
 ## Download (air-gapped ready)
 
-**Use the full release tarball** — it includes the pre-scraped documentation bundle (~16k topics). No internet access required to install or browse.
+Use the **full release tarball** — documentation included. No scraper or internet needed to install.
 
-1. Go to **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)**
-2. Download **`splunk_offline_docs_full.tgz`** from the latest release (v0.4.9+)
-3. Install:
+1. **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)** → download `splunk_offline_docs_full.tgz` (latest: **v0.4.10+**)
+2. Install:
 
 ```bash
 tar -xzf splunk_offline_docs_full.tgz -C $SPLUNK_HOME/etc/apps/
@@ -22,39 +40,27 @@ chown -R splunk:splunk $SPLUNK_HOME/etc/apps/splunk_offline_docs
 $SPLUNK_HOME/bin/splunk restart
 ```
 
-4. Open **Splunk Offline Docs** in Splunk Web.
+3. Open **Splunk Offline Docs** in Splunk Web.
 
-> **Note:** The smaller `splunk_offline_docs.tgz` (app only, no docs) is for developers rebuilding from source. Air-gapped customers should always use `splunk_offline_docs_full.tgz`.
-
-## What's included in the full release
-
-| Product | help.splunk.com path |
-|---------|----------------------|
-| Splunk Enterprise | `splunk-enterprise` (latest 10.x) |
-| Enterprise Security 8 | `splunk-enterprise-security-8` |
-| SOAR (on-premises) | `splunk-soar/soar-on-premises` |
-| IT Service Intelligence | `splunk-it-service-intelligence` |
-
-~16,000 HTML topics, search index, navigation, and link resolution — ready offline on first install.
+> Developers rebuilding from source use `splunk_offline_docs.tgz` (app only, no docs). Air-gapped sites should always use **`splunk_offline_docs_full.tgz`**.
 
 ## Requirements
 
-- Splunk Enterprise 9.x or later
-- ~625 MB disk for the installed app with documentation bundle
+- Splunk Enterprise **9.x+**
+- ~**625 MB** disk for the installed app + documentation bundle
 
-## Updating documentation (optional)
+## Optional: update from help.splunk.com
 
-If your Splunk server **can** reach help.splunk.com, admins can use the **Configuration** view:
+If the Splunk server can reach the internet, admins use **Configuration**:
 
-- **Check now** — compare local versions against help.splunk.com
-- **Incremental update** — fetch missing topics and repair links
-- **Full refresh** — rebuild navigation and re-sync all products
+| Action | What it does |
+|--------|----------------|
+| **Check now** | Compare local docs vs help.splunk.com |
+| **Update now** | Fetch missing topics and repair links |
+| **Full refresh** | Rebuild navigation and re-scrape all products |
+| **Daily auto-check** | Scheduled check every 24h (off by default for air-gapped hosts) |
 
-Daily auto-check is **disabled by default** for air-gapped sites.
-
-## Building from source (connected environments only)
-
-For maintainers with outbound HTTPS to help.splunk.com:
+## Build from source (connected hosts)
 
 ```bash
 git clone https://github.com/gosplunk/splunk-offline-docs.git
@@ -63,20 +69,20 @@ bash scripts/build_bundle.sh
 bash scripts/package_release.sh
 ```
 
-## App documentation
+## Documentation
 
 | Location | Audience |
 |----------|----------|
-| [splunk_offline_docs/README](splunk_offline_docs/README) | Splunk App Manager |
-| **About** view in Splunk Web | All app users |
+| [splunk_offline_docs/README](splunk_offline_docs/README) | Splunk admins |
+| **About** view in Splunk Web | All users |
 | **Configuration** view | Admins |
 
 ## Legal
 
-- **App code** in this repository is licensed under the [Apache License 2.0](LICENSE).
-- **Documentation HTML** mirrored from help.splunk.com is © Splunk Inc. Distributed for use with appropriately licensed Splunk deployments under Splunk's documentation terms for licensed customers.
-- Splunk®, Splunk Enterprise®, and related marks are trademarks of Splunk Inc.
+- **App code** — [Apache License 2.0](LICENSE)
+- **Documentation HTML** from help.splunk.com — © Splunk Inc.; for licensed Splunk deployments per Splunk documentation terms
+- Splunk® and related marks are trademarks of Splunk Inc.
 
 ## Support
 
-Contact [Joe Hagan](mailto:joehaga@cisco.com).
+[Joe Hagan](mailto:joehaga@cisco.com)
