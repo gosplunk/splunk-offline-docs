@@ -15,7 +15,7 @@ const VERSION_FILTERS = {
   enterprise: (v) => /^10\.\d+$/.test(v),
   es8: (v) => /^8\.\d+$/.test(v),
   soar: (v) => /^\d+\.\d+\.\d+$/.test(v),
-  itsi: (v) => /^\d+\.\d+$/.test(v),
+  itsi: (v) => /^\d+\.\d+(?:\.\d+)?$/.test(v),
 };
 
 let navData = [];

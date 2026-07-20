@@ -13,7 +13,9 @@ from bs4 import BeautifulSoup
 from .http_client import HelpClient
 
 NAV_PREFIX = "/en/fragments/nav/"
-VERSION_TITLE = re.compile(r"^\d+\.\d+$")
+# Nav link titles that are version labels (e.g. 10.4, 4.21, 8.5.0)
+VERSION_TITLE = re.compile(r"^\d+\.\d+(?:\.\d+)?$")
+ENTERPRISE_ROOT = "splunk-enterprise"
 
 
 @dataclass
@@ -102,9 +104,11 @@ def _title_from_link(a, path: str = "") -> str:
     return _clean_nav_title(a.get_text(" ", strip=True), link_path)
 
 
-def _is_excluded_version(title: str) -> bool:
-    m = VERSION_TITLE.match(title.strip())
-    if not m:
+def _is_excluded_version(title: str, root_path: str) -> bool:
+    """Skip legacy Enterprise 9.x nav branches only (major < 10)."""
+    if not VERSION_TITLE.match((title or "").strip()):
+        return False
+    if (root_path or "").strip("/").split("/")[0] != ENTERPRISE_ROOT:
         return False
     major = int(title.split(".")[0])
     return major < 10
@@ -124,7 +128,7 @@ def _parse_toc_children(soup: BeautifulSoup, root_path: str) -> List[Tuple[str, 
         if not path.startswith(root_path):
             continue
         title = _title_from_link(a, path)
-        if not title or _is_excluded_version(title):
+        if not title or _is_excluded_version(title, root_path):
             continue
         has_children = a.get("data-has-children") == "true"
         items.append((path, title, has_children))

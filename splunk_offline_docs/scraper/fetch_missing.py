@@ -16,6 +16,7 @@ from scraper.http_client import HelpClient
 from scraper.links import build_link_index, rewrite_topic_html
 from scraper.nav import NavNode, iter_topic_paths
 from scraper.versions import (
+    apply_latest_version_filter,
     latest_version_allowlist,
     path_matches_version_allowlist,
     version_filter_keep,
@@ -76,6 +77,7 @@ def rebuild_manifest(out: Path, checkpoint: dict, nav_trees: list) -> None:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output", default="bundle")
+    ap.add_argument("--products", default="enterprise,es8,soar,itsi")
     ap.add_argument("--rate-limit", type=float, default=0.35)
     args = ap.parse_args()
 
@@ -83,8 +85,11 @@ def main():
     manifest = out / "manifest"
     nav_trees = json.loads((manifest / "nav.json").read_text(encoding="utf-8"))
     checkpoint_path = out / "checkpoint.json"
+    if not checkpoint_path.is_file():
+        checkpoint_path.write_text(json.dumps({"topics": {}, "fetched_paths": []}), encoding="utf-8")
     checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
     products_cfg = load_products(ROOT / "scraper" / "products.yaml")
+    selected = {p.strip() for p in args.products.split(",") if p.strip()}
     topics_meta = checkpoint.setdefault("topics", {})
     done = set(checkpoint.get("fetched_paths", []))
     version_cache = checkpoint.setdefault("version_cache", {})
@@ -93,12 +98,19 @@ def main():
     topics_dir = out / "topics"
     topics_dir.mkdir(parents=True, exist_ok=True)
     fetched = 0
+    filtered_nav_trees = []
 
     for tree_dict in nav_trees:
         pid = tree_dict.get("id") or tree_dict.get("product")
-        if pid not in products_cfg:
+        if pid not in products_cfg or pid not in selected:
+            filtered_nav_trees.append(tree_dict)
             continue
         cfg = products_cfg[pid]
+        tree_dict, allowed = apply_latest_version_filter(tree_dict, cfg)
+        if allowed:
+            ordered = sorted(allowed, key=lambda v: tuple(int(p) for p in v.split(".")), reverse=True)
+            print(f"[{pid}] fetching topics for versions: {', '.join(ordered)}", flush=True)
+        filtered_nav_trees.append(tree_dict)
         root = tree_from_dict(tree_dict)
         all_paths = list(iter_topic_paths(root))
         version_allowlist = None
@@ -153,7 +165,7 @@ def main():
 
     checkpoint["fetched_paths"] = list(done)
     save_checkpoint(checkpoint_path, checkpoint)
-    rebuild_manifest(out, checkpoint, nav_trees)
+    rebuild_manifest(out, checkpoint, filtered_nav_trees)
     print(f"Done — fetched {fetched} new topics ({len(topics_meta)} total)", flush=True)
 
 

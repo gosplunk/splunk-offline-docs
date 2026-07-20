@@ -75,6 +75,12 @@ def main() -> int:
             env,
         )
         run_step(
+            "Prune old product versions",
+            [py, str(root / "scraper" / "prune_versions.py"), "--output", out,
+             "--products", "soar,itsi"],
+            env,
+        )
+        run_step(
             "Repair bundle",
             [py, str(root / "scraper" / "repair_bundle.py"), "--output", out],
             env,

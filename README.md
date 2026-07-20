@@ -22,7 +22,7 @@ A Splunk app for **air-gapped and restricted networks**. It ships a pre-built co
 
 ## What you get
 
-- **Splunk Enterprise** (10.x), **Enterprise Security 8**, **SOAR** (on-premises), **ITSI** — ~16k HTML topics
+- **Splunk Enterprise** (10.x), **Enterprise Security 8**, **SOAR** (on-premises, latest 2), **ITSI** (latest 2, e.g. 5.0 + 4.21) — ~16k+ HTML topics
 - Full-text **search**, product **tabs**, **version** dropdowns, and **offline link resolution**
 - **Configuration** view: check for updates, incremental/full scrape, daily auto-check toggle
 - **About** view with install and admin reference
@@ -31,7 +31,7 @@ A Splunk app for **air-gapped and restricted networks**. It ships a pre-built co
 
 Use the **full release tarball** — documentation included. No scraper or internet needed to install.
 
-1. **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)** → download `splunk_offline_docs_full.tgz` (latest: **v0.4.10+**)
+1. **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)** → download `splunk_offline_docs_full.tgz` (latest: **v0.4.11+**)
 2. Install:
 
 ```bash
@@ -59,6 +59,8 @@ If the Splunk server can reach the internet, admins use **Configuration**:
 | **Update now** | Fetch missing topics and repair links |
 | **Full refresh** | Rebuild navigation and re-scrape all products |
 | **Daily auto-check** | Scheduled check every 24h (off by default for air-gapped hosts) |
+
+SOAR and ITSI bundles keep the **two newest doc versions** from help.splunk.com (not a fixed pair). After upgrading to v0.4.11+, run **Full refresh** once so ITSI picks up current releases (e.g. 5.0 and 4.21).
 
 ## Build from source (connected hosts)
 

@@ -18,6 +18,7 @@ from scraper.content import (
     resolve_enterprise_version,
 )
 from scraper.versions import (
+    apply_latest_version_filter,
     latest_version_allowlist,
     path_matches_version_allowlist,
     version_filter_keep,
@@ -136,7 +137,12 @@ def crawl_product(
             print(f"[{pid}] WARN failed {path}: {e}", file=sys.stderr, flush=True)
 
     log(f"finished — {len([p for p in paths if p in done])} topics")
-    return nav_root.to_dict() | {"id": pid, "product": pid, "title": title}
+    tree_dict = nav_root.to_dict() | {"id": pid, "product": pid, "title": title}
+    tree_dict, allowed = apply_latest_version_filter(tree_dict, cfg)
+    if allowed:
+        ordered = sorted(allowed, key=lambda v: tuple(int(p) for p in v.split(".")), reverse=True)
+        log(f"nav filtered to latest {len(allowed)} version(s): {', '.join(ordered)}")
+    return tree_dict
 
 
 def main():

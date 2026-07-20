@@ -14,6 +14,7 @@ from scraper.crawl import load_products, save_checkpoint
 from scraper.http_client import HelpClient
 from scraper.nav import build_product_nav, load_cached_tree
 from scraper.patch_nav_manifest import patch_nav_file
+from scraper.versions import apply_latest_version_filter
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -79,9 +80,16 @@ def main():
                 cache_file=cache_file,
                 log=lambda m: print(f"[{pid}] {m}", flush=True),
             )
-            nav_trees.append(
-                root.to_dict() | {"id": pid, "product": pid, "title": cfg["title"]}
-            )
+            tree_dict = root.to_dict() | {
+                "id": pid,
+                "product": pid,
+                "title": cfg["title"],
+            }
+            tree_dict, allowed = apply_latest_version_filter(tree_dict, cfg)
+            if allowed:
+                ordered = sorted(allowed, key=lambda v: tuple(int(p) for p in v.split(".")), reverse=True)
+                print(f"[{pid}] latest {len(allowed)} version(s): {', '.join(ordered)}", flush=True)
+            nav_trees.append(tree_dict)
 
     (manifest / "nav.json").write_text(json.dumps(nav_trees, indent=2), encoding="utf-8")
     patch_nav_file(manifest / "nav.json")

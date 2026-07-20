@@ -74,6 +74,32 @@ def node_version(node: dict) -> Optional[str]:
     return segs[0] if segs else None
 
 
+def collect_paths_from_nav_dict(node: dict) -> List[str]:
+    paths: List[str] = []
+
+    def walk(item: dict) -> None:
+        path = item.get("path")
+        if path:
+            paths.append(path)
+        for child in item.get("children") or []:
+            if isinstance(child, dict):
+                walk(child)
+
+    walk(node)
+    return paths
+
+
+def apply_latest_version_filter(tree_dict: dict, cfg: dict) -> tuple[dict, Set[str]]:
+    """Keep only the newest N version branches present in a nav tree."""
+    keep_n = version_filter_keep(cfg)
+    if not keep_n:
+        return tree_dict, set()
+    allowed = latest_version_allowlist(collect_paths_from_nav_dict(tree_dict), keep_n)
+    if not allowed:
+        return tree_dict, set()
+    return filter_nav_node(tree_dict, allowed), allowed
+
+
 def filter_nav_node(node: dict, allowed: Set[str]) -> dict:
     children = node.get("children") or []
     filtered: List[dict] = []
