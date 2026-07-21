@@ -31,7 +31,7 @@ A Splunk app for **air-gapped and restricted networks**. It ships a pre-built co
 
 Use the **full release tarball** — documentation included. No scraper or internet needed to install.
 
-1. **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)** → download `splunk_offline_docs_full.tgz` (latest: **v0.4.11+**)
+1. **[Releases](https://github.com/gosplunk/splunk-offline-docs/releases)** → download **`splunk_offline_docs_full.tgz`** (~88 MB, docs included). **Do not** use `splunk_offline_docs.tgz` (~3 MB) for a fresh install — that file is app code only.
 2. Install:
 
 ```bash

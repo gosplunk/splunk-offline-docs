@@ -132,6 +132,10 @@
       + '<p class="od-lead">Check help.splunk.com for new versions and topics, then scrape updates into the offline bundle.</p></header>'
       + '<div class="od-grid">'
       + '<section class="od-card"><h2>Bundle</h2>'
+      + (bundle.ready === false
+        ? '<p class="od-error"><strong>Documentation bundle missing.</strong> '
+          + escapeHtml(bundle.ready_hint || 'Install splunk_offline_docs_full.tgz.') + '</p>'
+        : '')
       + '<dl class="od-dl"><dt>App version</dt><dd>' + escapeHtml(bundle.app_version || '—') + '</dd>'
       + '<dt>Topics stored</dt><dd>' + (bundle.topic_count || 0).toLocaleString() + '</dd>'
       + '<dt>Last sync</dt><dd>' + fmtTime((bundle.meta || {}).last_sync_at) + '</dd></dl></section>'

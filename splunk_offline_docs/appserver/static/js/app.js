@@ -944,7 +944,10 @@ document.addEventListener('click', (e) => {
 loadManifest().catch((err) => {
   LoadingUI.hideOverlay();
   document.getElementById('content').innerHTML =
-    `<p class="placeholder">Failed to load docs bundle. Run the scraper build first.<br><code>${err}</code></p>`;
+    `<p class="placeholder">Failed to load docs bundle.<br>`
+    + `Install <strong>splunk_offline_docs_full.tgz</strong> (docs included). `
+    + `The app-only download (~3&nbsp;MB) does not contain documentation.<br>`
+    + `<code>${err}</code></p>`;
 });
 
 initTheme();

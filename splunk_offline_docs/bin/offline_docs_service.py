@@ -106,11 +106,11 @@ def load_settings() -> dict:
 def scraper_root() -> Path:
     settings = load_settings()
     app = app_root()
+    # Prefer scraper bundled inside the installed app over dev clones on the host.
     candidates = [
         settings.get("scraper_root"),
-        os.environ.get("SPLUNK_OFFLINE_DOCS_ROOT"),
         str(app),
-        "/home/splunk/Splunk4Offlinedocs",
+        os.environ.get("SPLUNK_OFFLINE_DOCS_ROOT"),
         str(app.parents[1]),
     ]
     for raw in candidates:
@@ -128,10 +128,36 @@ def scraper_root() -> Path:
 
 
 def project_root() -> Path:
+    app = app_root()
+    if (app / "scraper" / "products.yaml").is_file():
+        return app
     root = scraper_root()
     if (root / "scraper" / "products.yaml").is_file():
         return root
     return root.parent
+
+
+def docs_bundle_ready() -> tuple[bool, str]:
+    """Return whether the offline docs bundle is present enough to browse."""
+    docs = docs_dir()
+    nav = docs / "manifest" / "nav.json"
+    link_index = docs / "manifest" / "link-index.json"
+    topics = docs / "topics"
+    topic_files = list(topics.glob("*.html")) if topics.is_dir() else []
+    if nav.is_file() and link_index.is_file() and len(topic_files) >= 100:
+        return True, ""
+    missing = []
+    if not nav.is_file():
+        missing.append("manifest/nav.json")
+    if not link_index.is_file():
+        missing.append("manifest/link-index.json")
+    if len(topic_files) < 100:
+        missing.append(f"topics/ ({len(topic_files)} html files)")
+    hint = (
+        "Install splunk_offline_docs_full.tgz (documentation included). "
+        "The app-only splunk_offline_docs.tgz (~3 MB) does not ship docs."
+    )
+    return False, f"Docs bundle incomplete: missing {', '.join(missing)}. {hint}"
 
 
 def python_bin() -> str:
@@ -390,8 +416,13 @@ def get_status() -> dict:
         scraper_path = str(scraper_root())
     except Exception as exc:
         scraper_path = str(exc)
+    bundle_ok, bundle_hint = docs_bundle_ready()
     return {
-        "bundle": bundle_stats(),
+        "bundle": {
+            **bundle_stats(),
+            "ready": bundle_ok,
+            "ready_hint": bundle_hint,
+        },
         "check": check,
         "job": {
             **job,
@@ -455,6 +486,10 @@ def run_check(save: bool = True) -> dict:
 def start_update(mode: str = "incremental") -> dict:
     if is_job_running():
         return {"ok": False, "error": "An update is already running", "job": get_job()}
+
+    bundle_ok, bundle_hint = docs_bundle_ready()
+    if mode == "incremental" and not bundle_ok:
+        return {"ok": False, "error": bundle_hint, "job": get_job()}
 
     log_path = state_path("update_job.log")
     log_path.write_text("", encoding="utf-8")
