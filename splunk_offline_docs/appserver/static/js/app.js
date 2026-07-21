@@ -13,7 +13,7 @@ const PRODUCT_LABELS = {
 /** Per-product version filters (latest matching version is selected by default). */
 const VERSION_FILTERS = {
   enterprise: (v) => /^10\.\d+$/.test(v),
-  es8: (v) => /^8\.\d+$/.test(v),
+  es8: (v) => /^8\.\d+(?:\.\d+)?$/.test(v),
   soar: (v) => /^\d+\.\d+\.\d+$/.test(v),
   itsi: (v) => /^\d+\.\d+(?:\.\d+)?$/.test(v),
 };
@@ -271,6 +271,39 @@ function currentProduct() {
   return navData[activeProduct] || navData[0];
 }
 
+function findNavNodeByPathInProduct(path, product) {
+  const pid = product?.id || product;
+  const tree = navData.find((p) => p.id === pid);
+  if (!tree) return null;
+  const nodes = productHasVersions(pid)
+    ? applyVersionToNav(tree.children || [], getSelectedVersion(tree))
+    : (tree.children || []);
+  let found = null;
+  (function walk(list) {
+    list.forEach((n) => {
+      if (n.path === path) found = n;
+      if (n.children?.length) walk(n.children);
+    });
+  })(nodes);
+  return found;
+}
+
+function findNavNodeByPath(path) {
+  return findNavNodeByPathInProduct(path, currentProduct());
+}
+
+function topicFromNavPath(path, product) {
+  const pid = product?.id || product;
+  const node = findNavNodeByPathInProduct(path, product);
+  if (!node?.topic_id) return null;
+  return {
+    id: node.topic_id,
+    path,
+    product: pid,
+    title: navNodeLabel(node),
+  };
+}
+
 function lookupTopic(path, product) {
   const pid = product?.id || product;
   const version = getSelectedVersion(product);
@@ -294,6 +327,8 @@ function lookupTopic(path, product) {
       || pathIndex.get(p)
       || searchIndex.find((t) => t.path === p && t.product === pid);
     if (hit) return hit;
+    const navHit = topicFromNavPath(p, product);
+    if (navHit) return navHit;
   }
   return null;
 }
@@ -317,7 +352,7 @@ async function loadManifest() {
   let progress = 4;
   const loadStep = async (step) => {
     LoadingUI.setOverlayProgress(progress, step.label);
-    const res = await fetch(`${step.url}?v=${cacheBust}`);
+    const res = await fetch(`${step.url}?v=${cacheBust}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Failed to load ${step.url} (${res.status})`);
     const data = await res.json();
     progress += step.weight;
@@ -353,7 +388,7 @@ async function loadManifest() {
 
   try {
     LoadingUI.setOverlayProgress(55, 'Loading search index…');
-    const res = await fetch(`${DOCS_BASE}/search-index.json?v=${cacheBust}`);
+    const res = await fetch(`${DOCS_BASE}/search-index.json?v=${cacheBust}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Failed to load search-index.json (${res.status})`);
     searchIndex = await res.json();
     buildPathIndex();
@@ -467,18 +502,6 @@ function renderSidebar() {
   ul.className = 'toc-tree';
   addNavNodes(ul, nodes, product);
   navEl.appendChild(ul);
-}
-
-function findNavNodeByPath(path) {
-  const nodes = navNodesForProduct(currentProduct());
-  let found = null;
-  (function walk(list) {
-    list.forEach((n) => {
-      if (n.path === path) found = n;
-      if (n.children?.length) walk(n.children);
-    });
-  })(nodes);
-  return found;
 }
 
 function addNavNodes(parent, nodes, product) {

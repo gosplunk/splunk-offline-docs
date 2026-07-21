@@ -30,10 +30,49 @@ def assemble_from_cache(out: Path, products_cfg: dict, selected: list[str]) -> l
         root = load_cached_tree(cache_file)
         if not root:
             raise SystemExit(f"Missing nav cache: {cache_file}")
-        nav_trees.append(
-            root.to_dict() | {"id": pid, "product": pid, "title": cfg["title"]}
-        )
+        tree_dict = root.to_dict() | {"id": pid, "product": pid, "title": cfg["title"]}
+        tree_dict, allowed = apply_latest_version_filter(tree_dict, cfg)
+        if allowed:
+            ordered = sorted(
+                allowed, key=lambda v: tuple(int(p) for p in v.split(".")), reverse=True
+            )
+            print(f"[{pid}] latest {len(allowed)} version(s): {', '.join(ordered)}", flush=True)
+        nav_trees.append(tree_dict)
     return nav_trees
+
+
+def load_existing_nav(manifest: Path) -> dict[str, dict]:
+    nav_path = manifest / "nav.json"
+    if not nav_path.is_file():
+        return {}
+    try:
+        trees = json.loads(nav_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(trees, list):
+        return {}
+    out: dict[str, dict] = {}
+    for tree in trees:
+        if isinstance(tree, dict):
+            pid = tree.get("id") or tree.get("product")
+            if pid:
+                out[str(pid)] = tree
+    return out
+
+
+def merge_nav_trees(products_cfg: dict, existing: dict[str, dict], updated: list[dict]) -> list[dict]:
+    """Keep unselected products from existing nav when rebuilding a subset."""
+    merged = dict(existing)
+    for tree in updated:
+        pid = tree.get("id") or tree.get("product")
+        if pid:
+            merged[str(pid)] = tree
+    ordered: list[dict] = []
+    for pid in products_cfg:
+        if pid in merged:
+            ordered.append(merged.pop(pid))
+    ordered.extend(merged.values())
+    return ordered
 
 
 def main():
@@ -91,8 +130,17 @@ def main():
                 print(f"[{pid}] latest {len(allowed)} version(s): {', '.join(ordered)}", flush=True)
             nav_trees.append(tree_dict)
 
+    if len(selected) < len(products_cfg):
+        existing = load_existing_nav(manifest)
+        if existing:
+            nav_trees = merge_nav_trees(products_cfg, existing, nav_trees)
+            print(
+                f"Merged nav ({len(nav_trees)} products; rebuilt {', '.join(selected)})",
+                flush=True,
+            )
+
     (manifest / "nav.json").write_text(json.dumps(nav_trees, indent=2), encoding="utf-8")
-    patch_nav_file(manifest / "nav.json")
+    patch_nav_file(manifest / "nav.json", out / "topics")
     meta_path = manifest / "meta.json"
     meta = {}
     if meta_path.exists():

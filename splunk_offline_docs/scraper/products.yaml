@@ -7,7 +7,7 @@ products:
   es8:
     title: Enterprise Security
     root_path: splunk-enterprise-security-8
-    version_filter: none
+    version_filter: latest_2
     exclude_path_contains: []
   soar:
     title: SOAR (On-premises)

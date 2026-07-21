@@ -7,6 +7,8 @@ import json
 import re
 from pathlib import Path
 
+from scraper.content import path_to_topic_id
+
 PRODUCT_ORDER = ["enterprise", "es8", "soar", "itsi"]
 PRODUCT_TITLES = {
     "enterprise": "Splunk Enterprise",
@@ -71,13 +73,25 @@ def best_title(title: str, path: str) -> str:
     return title
 
 
+def annotate_topic_ids(nodes: list, topics_dir: Path | None) -> None:
+    if not topics_dir or not topics_dir.is_dir():
+        return
+    for node in nodes:
+        path = (node.get("path") or "").strip()
+        if path:
+            tid = path_to_topic_id(path)
+            if (topics_dir / f"{tid}.html").is_file():
+                node["topic_id"] = tid
+        annotate_topic_ids(node.get("children") or [], topics_dir)
+
+
 def walk(nodes: list) -> None:
     for node in nodes:
         node["title"] = best_title(node.get("title", ""), node.get("path", ""))
         walk(node.get("children") or [])
 
 
-def patch_nav_file(nav_path: Path) -> None:
+def patch_nav_file(nav_path: Path, topics_dir: Path | None = None) -> None:
     nav = json.loads(nav_path.read_text(encoding="utf-8"))
     nav.sort(
         key=lambda p: (
@@ -91,6 +105,7 @@ def patch_nav_file(nav_path: Path) -> None:
         if pid in PRODUCT_TITLES:
             product["title"] = PRODUCT_TITLES[pid]
         walk(product.get("children") or [])
+        annotate_topic_ids(product.get("children") or [], topics_dir)
 
     nav_path.write_text(json.dumps(nav, indent=2), encoding="utf-8")
     print(f"Patched {nav_path}")
@@ -99,8 +114,14 @@ def patch_nav_file(nav_path: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("nav_json", type=Path)
+    ap.add_argument(
+        "--topics-dir",
+        type=Path,
+        default=None,
+        help="If set, add topic_id to nodes whose HTML exists under this directory",
+    )
     args = ap.parse_args()
-    patch_nav_file(args.nav_json)
+    patch_nav_file(args.nav_json, args.topics_dir)
 
 
 if __name__ == "__main__":

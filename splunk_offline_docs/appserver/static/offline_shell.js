@@ -5,7 +5,7 @@ require([
 ], function ($, _, utils) {
     'use strict';
 
-    var build = '20260703z';
+    var build = '20260721e';
     var frameUrl = utils.make_url(
         '/static/app/splunk_offline_docs/index.html?build=' + build + '&_=' + Date.now()
     );
