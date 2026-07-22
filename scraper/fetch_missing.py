@@ -46,17 +46,36 @@ def rebuild_manifest(out: Path, checkpoint: dict, nav_trees: list) -> None:
         raw = fp.read_text(encoding="utf-8")
         fp.write_text(rewrite_topic_html(raw, link_index, meta["path"]), encoding="utf-8")
 
-    search_index = [
-        {
-            "id": tid,
-            "title": m["title"],
-            "path": m["path"],
-            "product": m["product"],
-            "text": plain_text(fp.read_text(encoding="utf-8"))[:8000],
-        }
-        for tid, m in topics.items()
-        if (fp := topics_dir / f"{tid}.html").exists()
-    ]
+    search_index = []
+    for tid, m in topics.items():
+        fp = topics_dir / f"{tid}.html"
+        if not fp.is_file():
+            continue
+        search_index.append(
+            {
+                "id": tid,
+                "title": m["title"],
+                "path": m["path"],
+                "product": m["product"],
+                "text": plain_text(fp.read_text(encoding="utf-8"))[:8000],
+            }
+        )
+
+    # Preserve entries for products not present in this checkpoint pass (partial fetch).
+    existing_path = manifest / "search-index.json"
+    if existing_path.is_file():
+        try:
+            existing = json.loads(existing_path.read_text(encoding="utf-8"))
+            touched_products = {m.get("product") for m in topics.values()}
+            by_id = {e["id"]: e for e in search_index}
+            for entry in existing:
+                if entry.get("product") in touched_products:
+                    continue
+                if entry.get("id") not in by_id:
+                    by_id[entry["id"]] = entry
+            search_index = list(by_id.values())
+        except (json.JSONDecodeError, OSError, KeyError):
+            pass
 
     (manifest / "nav.json").write_text(json.dumps(nav_trees, indent=2), encoding="utf-8")
     (manifest / "link-index.json").write_text(

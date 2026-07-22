@@ -15,8 +15,12 @@ const VERSION_FILTERS = {
   enterprise: (v) => /^10\.\d+$/.test(v),
   es8: (v) => /^8\.\d+(?:\.\d+)?$/.test(v),
   soar: (v) => /^\d+\.\d+\.\d+$/.test(v),
-  itsi: (v) => /^\d+\.\d+(?:\.\d+)?$/.test(v),
+  // ITSI 4.x+ only — ignore legacy 3.x paths left in stale search indexes
+  itsi: (v) => /^(?:4\.\d+(?:\.\d+)?|5\.\d+(?:\.\d+)?)$/.test(v),
 };
+
+/** Keep only the newest N versions in the UI (matches scraper latest_2 policy). */
+const KEEP_LATEST_N = { es8: 2, soar: 2, itsi: 2 };
 
 let navData = [];
 let searchIndex = [];
@@ -185,15 +189,21 @@ function discoverVersions(productId) {
   const filter = VERSION_FILTERS[productId];
   if (!filter) return [];
   const vers = new Set();
-  searchIndex
-    .filter((t) => t.product === productId)
-    .forEach((t) => {
-      const v = pathVersion(t.path);
-      if (v && filter(v)) vers.add(v);
-    });
   const product = navData.find((p) => p.id === productId);
+  // Prefer explicit version branches from nav (source of truth after prune).
   if (product) walkNavForVersions(product.children || [], vers, filter);
-  return [...vers].sort(compareVersions).reverse();
+  if (vers.size === 0) {
+    searchIndex
+      .filter((t) => t.product === productId)
+      .forEach((t) => {
+        const v = pathVersion(t.path);
+        if (v && filter(v)) vers.add(v);
+      });
+  }
+  let sorted = [...vers].sort(compareVersions).reverse();
+  const keepN = KEEP_LATEST_N[productId];
+  if (keepN && sorted.length > keepN) sorted = sorted.slice(0, keepN);
+  return sorted;
 }
 
 function productHasVersions(productId) {
